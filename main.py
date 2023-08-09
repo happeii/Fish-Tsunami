@@ -29,6 +29,9 @@ fish_bullet = pygame.transform.scale(pygame.image.load("assets/temp fish bullet.
 
 
 class character():
+    #bullet cooldown
+    Cooldown = 20
+
     def __init__(self,x,y,hp=100):
         self.x = x
         self.y = y
@@ -36,10 +39,34 @@ class character():
         self.image = None
         self.shot = None
         self.shots = []
-        self.cooldown = 0
+        self.cooldown_time = 0
     
     def draw(self,Screen):
         Screen.blit(self.image,(self.x,self.y))
+        for shot in self.shots:
+            shot.draw(screen)
+
+    def move_shots(self, speed, target):
+        self.cooldown()
+        for shot in self.shots:
+            shot.move(speed)
+            if shot.off_screen(width):
+                self.shots.remove(shot)
+            elif shot.collision(target):
+                target.hp -= 10
+                self.shots.remove(shot)
+
+    def cooldown(self):
+        if self.cooldown_time >= self.Cooldown:
+            self.cooldown_time = 0
+        elif self.cooldown_time > 0:
+            self.cooldown_time += 1
+
+    def shoot(self):
+        if self.cooldown_time == 0:
+            next_shot = Projectile(self.x, self.y, self.shot)
+            self.shots.append(next_shot)
+            self.cooldown_time = 1
 
 class Player(character):
     def __init__(self, x, y, hp=100):
@@ -48,6 +75,20 @@ class Player(character):
         self.shot = harpoon
         self.mask = pygame.mask.from_surface(self.image)
         self.max_hp = hp
+
+    def move_shots(self, speed, targets):
+        self.cooldown()
+        for shot in self.shots:
+            shot.move(speed)
+            if shot.off_screen(width):
+                self.shots.remove(shot)
+            else:
+                for target in targets:
+                    if shot.collision(target):
+                        targets.remove(target)
+                        self.shots.remove(shot)
+
+
 
 class Enemy(character):
     UNITS = {
@@ -61,6 +102,32 @@ class Enemy(character):
     def move(self, speed):
         self.x -= speed
 
+class Projectile:
+    def __init__(self, x, y, image):
+        self.x = x
+        self.y = y
+        self.image = image
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def draw(self, screen):
+        screen.blit(self.image, (self.x, self.y))
+
+    def move(self, speed):
+        self.x += speed
+
+    #delete projectile off screen
+    def off_screen(self, width):
+        return not (0 < self.x <= width)
+    
+    #collisions
+    def collision(self, target):
+        return collide(self,target)
+
+def collide(object1, object2):
+    gap_x = object2.x - object1.x
+    gap_y = object2.y - object1.y
+    return object1.mask.overlap(object2.mask, (gap_x, gap_y)) != None
+
 def main_loop():
     running = True
     score = 0
@@ -72,6 +139,8 @@ def main_loop():
     enemies = []
     enemy_speed = 2
     wave_size = 5
+    projectile_speed = 6
+
 
     def update_screen():
         screen.blit(background,(0,0))
@@ -113,9 +182,20 @@ def main_loop():
             player.y -= player_speed
         if active_keys[pygame.K_s] and player.y + player_speed + 40 < height:
             player.y += player_speed
+        if active_keys[pygame.K_SPACE]:
+            player.shoot()
 
         for enemy in enemies:
             enemy.move(enemy_speed)
+            enemy.move_shots(-projectile_speed, player)
+            if random.randrange(0, 180) == 1:
+                enemy.shoot()
+            
+            if enemy.x < 0:
+                lives -= 1
+                enemies.remove(enemy)
+            
+        player.move_shots(projectile_speed, enemies)
 
         #exit game
         for event in pygame.event.get():
