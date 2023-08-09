@@ -41,8 +41,8 @@ class character():
         self.shots = []
         self.cooldown_time = 0
     
-    def draw(self,Screen):
-        Screen.blit(self.image,(self.x,self.y))
+    def draw(self,screen):
+        screen.blit(self.image,(self.x,self.y))
         for shot in self.shots:
             shot.draw(screen)
 
@@ -88,6 +88,15 @@ class Player(character):
                         targets.remove(target)
                         self.shots.remove(shot)
 
+    def hp_bar(self, screen):
+        pygame.draw.rect(screen, (255,0,0),
+            (self.x, self.y + self.image.get_height() - 50, self.image.get_width(), 10))
+        pygame.draw.rect(screen, (0,255,0),
+            (self.x, self.y + self.image.get_height() - 50, self.image.get_width() * self.hp / self.max_hp, 10))
+        
+    def draw(self,screen):
+        super().draw(screen)
+        self.hp_bar(screen)
 
 
 class Enemy(character):
@@ -133,13 +142,16 @@ def main_loop():
     score = 0
     wave = 0
     lives = 3
-    main_text = pygame.font.SysFont('freesansbold',40)
+    main_text = pygame.font.SysFont('freesansbold', 40)
+    main_text2 = pygame.font.SysFont('freesansbold', 60, True, False)
     player_speed = 5
     player = Player(100,400)
     enemies = []
     enemy_speed = 2
     wave_size = 5
     projectile_speed = 6
+    game_over = False
+    game_over_counter = 0
 
 
     def update_screen():
@@ -154,13 +166,29 @@ def main_loop():
         for enemy in enemies:
             enemy.draw(screen)
 
+        if game_over:
+            game_over_text = main_text2.render(f'G A M E  O V E R', True, (255,0,0))
+            screen.blit(game_over_text, ((width/2 - game_over_text.get_width()/2), (height/2)))
 
-        pygame.display.update
+        pygame.display.update()
 
 
     while running:
         timer.tick(fps)
         update_screen()
+        
+        if lives <= 0 or player.hp <= 0:
+            game_over = True
+            game_over_counter += 1
+
+
+    
+        #game over screen
+        if game_over:
+            if game_over_counter > fps * 5:
+                running = False
+            else:
+                continue
         
         #waves
         if len(enemies) == 0:
@@ -191,6 +219,10 @@ def main_loop():
             if random.randrange(0, 180) == 1:
                 enemy.shoot()
             
+            if collide(enemy, player):
+                player.hp -= 10
+                enemies.remove(enemy)
+
             if enemy.x < 0:
                 lives -= 1
                 enemies.remove(enemy)
@@ -201,8 +233,23 @@ def main_loop():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-        pygame.display.flip()
-    pygame.quit()
+        
     
 
-main_loop()
+
+def start_menu():
+    text = pygame.font.SysFont('freesansbold', 60, True, False)
+    running = True
+    while running:
+        screen.blit(background, (0,0))
+        start_label = text.render('Click Anywhere To Begin', True, (255,255,255))
+        screen.blit(start_label, (width/2 - start_label.get_width()/2, (height/2)))
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                main_loop()
+    pygame.quit()
+
+start_menu()
