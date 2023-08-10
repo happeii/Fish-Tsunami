@@ -9,5 +9,6 @@ This game is like space invaders, but with fish.
 - Don't take too many hits or let the fish get past.
 ### Movement
 - w, a, s, d
+- arrow keys
 ### Shooting
 - SPACE
