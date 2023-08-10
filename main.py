@@ -98,8 +98,12 @@ class Player(character):
                 for target in targets:
                     if shot.collision(target):
                         targets.remove(target)
-                        self.shots.remove(shot)
                         impact_sound.play()
+                        if shot in self.shots:
+                            self.shots.remove(shot)
+                        else:
+                            continue
+
                         
 
     def hp_bar(self, screen):
