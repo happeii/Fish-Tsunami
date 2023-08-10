@@ -1,5 +1,5 @@
 # About
-This game is like space invaders, but with fish. And pwease help me get some non-copyrighted music cause I smoll brain
+This game is like space invaders, but with fish.
 ### How to Open
 1. Clone/Download the repo
    - Make sure zip file is extracted

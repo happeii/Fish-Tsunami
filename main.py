@@ -29,7 +29,7 @@ fish_bullet = pygame.transform.scale(pygame.image.load("assets/images/temp fish 
 
 #sound
 pygame.mixer.init()
-pygame.mixer.music.load("assets/audio/Ending Theme  Super Mario World.mp3")
+pygame.mixer.music.load("assets/audio/Mozart Symphony #40 in G Minor, K 550 - 1. Molto Allegro.mp3")
 pygame.mixer.music.set_volume(0.2)
 game_over_sound = pygame.mixer.Sound("assets/audio/Sad Trombone Wah Wah Wah Fail - QuickSounds.com.mp3")
 game_over_sound.set_volume(0.2)
