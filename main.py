@@ -18,7 +18,6 @@ screen = pygame.display.set_mode([width, height])
 timer = pygame.time.Clock()
 
 
-
 #images
 background = pygame.transform.scale(pygame.image.load("assets/images/bg.png"),(width,height))
 player = pygame.transform.scale(pygame.image.load("assets/images/harpoon boat.png"),(90,30))
@@ -35,9 +34,16 @@ game_over_sound = pygame.mixer.Sound("assets/audio/Sad Trombone Wah Wah Wah Fail
 game_over_sound.set_volume(0.2)
 impact_sound = pygame.mixer.Sound("assets/audio/among us death sound.mp3")
 impact_sound.set_volume(0.1)
+take_dmg_sound = pygame.mixer.Sound("assets/audio/Death sound in Minecraft.mp3")
+take_dmg_sound.set_volume(0.2)
 
 pygame.mixer.music.play(loops=-1)
 
+Score = [0]
+
+def add_score(score):
+	score += 10
+	return score
 
 
 class character():
@@ -66,6 +72,7 @@ class character():
 				self.shots.remove(shot)
 			elif shot.collision(target):
 				target.hp -= 10
+				take_dmg_sound.play()
 				self.shots.remove(shot)
 
 	def cooldown(self):
@@ -81,7 +88,7 @@ class character():
 			self.cooldown_time = 1
 
 class Player(character):
-	def __init__(self, x, y, hp=100):
+	def __init__(self, x, y, hp=100,):
 		super().__init__(x, y, hp)
 		self.image = player
 		self.shot = harpoon
@@ -99,10 +106,13 @@ class Player(character):
 					if shot.collision(target):
 						targets.remove(target)
 						impact_sound.play()
+						Score[0]=10
+						add_score(Score[0])
 						if shot in self.shots:
 							self.shots.remove(shot)
 						else:
 							continue
+						
 
 						
 
@@ -155,9 +165,10 @@ def collide(object1, object2):
 	gap_y = object2.y - object1.y
 	return object1.mask.overlap(object2.mask, (gap_x, gap_y)) != None
 
+
 def main_loop():
 	running = True
-	#score = 0
+	score = 0
 	wave = 0
 	lives = 3
 	main_text = pygame.font.SysFont('freesansbold', 40)
@@ -174,12 +185,12 @@ def main_loop():
 
 	def update_screen():
 		screen.blit(background,(0,0))
-		#score_text=main_text.render(f'SCORE: {score}',True,(255,255,255))
+		score_text=main_text.render(f'SCORE: {score}',True,(255,255,255))
 		wave_text=main_text.render(f'WAVE: {wave}',True,(255,255,255))
 		lives_text=main_text.render(f'LIVES: {lives}',True,(255,255,255))
-		#screen.blit(score_text,(10,40))
+		screen.blit(score_text,(10,10))
 		screen.blit(lives_text,(800,10))
-		screen.blit(wave_text,(10,10))
+		screen.blit(wave_text,(10,40))
 		player.draw(screen)
 		for enemy in enemies:
 			enemy.draw(screen)
@@ -187,6 +198,8 @@ def main_loop():
 		if game_over:
 			game_over_text = main_text2.render(f'G A M E  O V E R', True, (255,0,0))
 			screen.blit(game_over_text, ((width/2 - game_over_text.get_width()/2), (height/2)))
+			score_text = main_text2.render(f'S C O R E: '+ str(score), True, (255,0,0))
+			screen.blit(score_text, ((width/2 - game_over_text.get_width()/2), (height/2)+50))
 
 		pygame.display.update()
 
@@ -220,6 +233,7 @@ def main_loop():
 							random.choice(["atkfish"]))
 				enemies.append(enemy)
 
+
 		#movement
 		active_keys = pygame.key.get_pressed()
 		if (active_keys[pygame.K_a] or active_keys[pygame.K_LEFT]) and player.x - player_speed > 0:
@@ -241,16 +255,20 @@ def main_loop():
 			
 			if collide(enemy, player):
 				player.hp -= 10
+				score += 10
 				enemies.remove(enemy)
 				impact_sound.play()
+				take_dmg_sound.play()
+				
 
 			if enemy.x < 0:
 				lives -= 1
 				enemies.remove(enemy)
+	
 		
-
 		player.move_shots(projectile_speed, enemies)
-		
+		score += Score[0]
+		Score[0] = 0
 
 		#exit game
 		for event in pygame.event.get():
